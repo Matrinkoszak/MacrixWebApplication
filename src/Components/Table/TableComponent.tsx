@@ -35,6 +35,14 @@ const Table: FC = () => {
         return dayjs().diff(birthDate, 'year');
     }
 
+    const ModifyPeople = <K extends keyof Person>(id: number, field: K, newValue: Person[K]) => {
+        let tempPeople = people;
+        let target = tempPeople.filter(x => x.Id === id)[0];
+        target[field] = newValue;
+        setPeople(tempPeople);
+        console.log(people);
+    }
+
     return (
         <div className={styles.TableComponent}>
             <table className={styles.table}>
@@ -54,7 +62,9 @@ const Table: FC = () => {
                         return (
                             <tr key={element.Id} className={styles.tableRow}>
                                 <td>{element.Id}</td>
-                                <td>{element.firstName}</td>
+                                <td>
+                                    <input type="text" defaultValue={element.firstName} onChange={e => ModifyPeople<string>(element.Id, "firstName", e.target.value)} />
+                                </td>
                                 <td>{element.lastName}</td>
                                 <td>{element.streetName}</td>
                                 <td>{element.houseNumber}</td>
