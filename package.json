@@ -10,6 +10,9 @@
     "@types/node": "^16.18.79",
     "@types/react": "^18.2.52",
     "@types/react-dom": "^18.2.18",
+    "axios": "^1.6.7",
+    "dayjs": "^1.11.10",
+    "node-sass": "^7.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -42,6 +45,7 @@
   },
   "devDependencies": {
     "eslint-config-react-app": "^7.0.1",
-    "jest-editor-support": "^31.1.2"
+    "jest-editor-support": "^31.1.2",
+    "sass": "^1.70.0"
   }
 }

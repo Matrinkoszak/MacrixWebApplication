@@ -1,0 +1,2 @@
+D:\Repos\Macrix\MacrixWebApplication\MacrixWebApplication\obj\Debug\macrixwebapplication.esproj.SuggestedBindingRedirects.cache
+D:\Repos\Macrix\MacrixWebApplication\MacrixWebApplication\obj\Debug\macrixwebapplication.esproj.CoreCompileInputs.cache
