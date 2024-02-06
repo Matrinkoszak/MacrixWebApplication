@@ -11,7 +11,7 @@ import { Person } from '../../Models/PersonModel';
 const POLISH_PHONE_NUMBER_LENGTH = 9;
 
 const Table: FC = () => {
-    const { getPeople } = useRestAPI();
+    const { getPeople, saveChanges } = useRestAPI();
     const [people, setPeople] = useState<Person[]>([]);
     const [wrongNumbers, setWrongNumbers] = useState<number[]>([]);
     const [showNumbersSection, setShowNumbersSection] = useState<boolean>(false);
@@ -21,9 +21,7 @@ const Table: FC = () => {
     const [showEmptyFieldsSection, setShowEmptyFieldsSection] = useState<boolean>(false);
 
     useEffect(() => {
-        getPeople().then(resp => {
-            setPeople(resp as Person[]);
-        });
+        ReloadData()
     }, [])
 
     const headers: { key: string, label: string }[] = [
@@ -58,8 +56,12 @@ const Table: FC = () => {
             phoneNumber: undefined,
             dateOfBirth: dayjs(),
             isTemp: true,
-            isModified: false
+            isModified: false,
+            isDeleted: false
         });
+        tempPeople.map(element => {
+            element = correctID(element, tempPeople);
+        })
         setPeople(tempPeople);
     }
 
@@ -155,6 +157,83 @@ const Table: FC = () => {
         }
     }
 
+    const correctID = (element: Person, people: Person[]): Person => {
+        const tempPeople: Person[] = [];
+        people.map(person => {
+            tempPeople.push(person);
+        })
+        if (element.isTemp) {
+            const index = people.indexOf(element);
+            tempPeople.splice(index, 1);
+            if (tempPeople.filter(x => x.Id === element.Id).length > 0) {
+                element.Id = element.Id + 1;
+                return correctID(element, tempPeople);
+            }
+        }
+        return element;
+        
+    }
+
+    const Refresh = () => {
+        let initialSize = people.length;
+        let tempPeople: Person[] = [];
+        people.map(person => {
+            if (person.isTemp) {
+                tempPeople.push(person);
+                initialSize = initialSize - 1;
+            }
+        });
+        setPeople([]);
+        getPeople().then(resp => {
+            let refreshedPeople = (resp as Person[]);
+            refreshedPeople.map(refreshed => {
+                tempPeople.push(refreshed);
+            });
+
+            tempPeople.map(element => {
+                element = correctID(element, tempPeople);
+            })
+
+            setPeople(tempPeople.sort((a, b) => a.Id - b.Id));
+
+            AreThereEmptyFields();
+            ArePhoneNumbersCorrect();
+            ArePostalCodesCorrect();
+        });
+
+        
+    }
+
+    const ReloadData = () => {
+        setShowCodesSection(false);
+        setShowEmptyFieldsSection(false);
+        setShowNumbersSection(false);
+        setPeople([]);
+        getPeople().then(resp => {
+            setPeople(resp as Person[]);
+        });
+    }
+
+    const Save = () => {
+        if (!showCodesSection && !showEmptyFieldsSection && !showNumbersSection) {
+            saveChanges(people).then(() => {
+                let tempPeople: Person[] = [];
+                people.map(person => {
+                    if (person.isTemp && person.isModified) {
+                        person.isTemp = false;
+                    }
+                    person.isModified = false;
+                    tempPeople.push(person);
+                })
+                setPeople(tempPeople);
+            });
+        }
+        else {
+            alert("Cannot save with incorrect data!");
+        }
+        
+    }
+
     return (
         <div className={styles.TableComponent}>
             {showNumbersSection && (
@@ -186,62 +265,57 @@ const Table: FC = () => {
                 </thead>
                 <tbody>
                     {people.map((element, index) => {
-                        return (
-                            <tr key={element.Id} className={styles.tableRow}>
-                                <td>{element.Id}</td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.firstName ? element.firstName : ""} onChange={e => ModifyPeople<"firstName">(element.Id, "firstName", e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.lastName ? element.lastName : ""} onChange={e => ModifyPeople<"lastName">(element.Id, "lastName", e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.streetName ? element.streetName : ""} onChange={e => ModifyPeople<"streetName">(element.Id, "streetName", e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.houseNumber !== undefined ? element.houseNumber.toString() : ""} onChange={e => ModifyPeople<"houseNumber">(element.Id, "houseNumber", Number(e.target.value))} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.apartmentNumber !== undefined ? element.apartmentNumber.toString() : ""} onChange={e => ModifyPeople<"apartmentNumber">(element.Id, "apartmentNumber", Number(e.target.value))} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.postalCode ? element.postalCode : ""} onChange={e => ModifyPeople<"postalCode">(element.Id, "postalCode", e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.town ? element.town : ""} onChange={e => ModifyPeople<"town">(element.Id, "town", e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="text" style={{ height: "45px" }} defaultValue={element.phoneNumber !== undefined ? element.phoneNumber : ""} onChange={e => ModifyPeople<"phoneNumber">(element.Id, "phoneNumber", Number(e.target.value))} />
-                                </td>
-                                <td>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            value={element.dateOfBirth}
-                                            onChange={(newValue) => ModifyPeople<"dateOfBirth">(element.Id, "dateOfBirth", newValue ? newValue : dayjs())}
-                                        />
-                                    </LocalizationProvider>
-                                </td>
-                                <td>{element.dateOfBirth ? GetAge(element.dateOfBirth) : ""}</td>
-                                <td>{index+1 === people.length ? "Add" : "Delete"}</td>
-                            </tr>
-                        );
+                        if (!element.isDeleted) {
+                            return (
+                                <tr key={element.Id} className={styles.tableRow}>
+                                    <td>{element.Id}</td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.firstName ? element.firstName : ""} onChange={e => ModifyPeople<"firstName">(element.Id, "firstName", e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.lastName ? element.lastName : ""} onChange={e => ModifyPeople<"lastName">(element.Id, "lastName", e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.streetName ? element.streetName : ""} onChange={e => ModifyPeople<"streetName">(element.Id, "streetName", e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.houseNumber !== undefined ? element.houseNumber.toString() : ""} onChange={e => ModifyPeople<"houseNumber">(element.Id, "houseNumber", Number(e.target.value))} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.apartmentNumber !== undefined ? element.apartmentNumber.toString() : ""} onChange={e => ModifyPeople<"apartmentNumber">(element.Id, "apartmentNumber", Number(e.target.value))} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.postalCode ? element.postalCode : ""} onChange={e => ModifyPeople<"postalCode">(element.Id, "postalCode", e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.town ? element.town : ""} onChange={e => ModifyPeople<"town">(element.Id, "town", e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input type="text" style={{ height: "45px" }} defaultValue={element.phoneNumber !== undefined ? element.phoneNumber : ""} onChange={e => ModifyPeople<"phoneNumber">(element.Id, "phoneNumber", Number(e.target.value))} />
+                                    </td>
+                                    <td>
+                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                            <DatePicker
+                                                value={element.dateOfBirth}
+                                                onChange={(newValue) => ModifyPeople<"dateOfBirth">(element.Id, "dateOfBirth", newValue ? newValue : dayjs())}
+                                            />
+                                        </LocalizationProvider>
+                                    </td>
+                                    <td>{element.dateOfBirth ? GetAge(element.dateOfBirth) : ""}</td>
+                                    <td>
+                                        <button onClick={() => ModifyPeople<"isDeleted">(element.Id, "isDeleted", true)} > Delete </button>
+                                    </td>
+                                </tr>
+                            );
+                        }
                     })}
                 </tbody>
             </table>
             <div>
-                {/*<Button
-                    onPress={onPressLearnMore}
-                    title="Refresh"
-                />*/}
+                <button onClick={() => Refresh()} > Refresh </button>
                 <button onClick={() => AddEmptyRow()} > Add </button>
-                {/*<Button
-                    onPress={onPressLearnMore}
-                    title="Save"
-                />
-                <Button
-                    onPress={onPressLearnMore}
-                    title="Add"
-                />*/}
+                <button onClick={() => Save()} > Save </button>
+                <button onClick={() => ReloadData()} > Cancel </button>
             </div>
         </div>
     );

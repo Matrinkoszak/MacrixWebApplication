@@ -16,4 +16,5 @@ export interface Person {
     dateOfBirth?: Dayjs;
     isTemp: boolean;
     isModified: boolean;
+    isDeleted: boolean;
 }
