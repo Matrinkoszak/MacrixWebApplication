@@ -40,26 +40,29 @@ export const useRestAPI = () => {
         })
 
         peopleToRemove.map(person => {
-            deletePerson(person).then(status => {
-                if (status !== 204) {
-                    alert("Removing person with id " + person.Id + " failed.");
-                }
-            })
+            try {
+                deletePerson(person);
+            }
+            catch {
+                alert("Removing person with id " + person.Id + " failed.");
+            }
         })
 
         peopleToUpdate.map(person => {
-            updatePerson(person).then(status => {
-                if (status !== 204) {
-                    alert("Updating person with id " + person.Id + " failed.");
-                }
-            })
-        })
-
-        addPeople(peopleToAdd).then(status => {
-            if (status !== 201) {
-                alert("Uploading new people failed.");
+            try {
+                updatePerson(person);
+            }
+            catch {
+                alert("Updating person with id " + person.Id + " failed.");
             }
         })
+
+        try {
+            addPeople(peopleToAdd);
+        }
+        catch {
+            alert("Uploading new people failed.");
+        }
 
     }
 
