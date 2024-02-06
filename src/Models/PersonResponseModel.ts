@@ -1,4 +1,4 @@
-export interface PersonResponse {
+export interface PersonNetworkModel {
     id: number;
     firstName: string;
     lastName: string;
