@@ -7,41 +7,20 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useRestAPI } from '../../Hooks/useRestAPI';
 import styles from '../Table/Table.module.scss'
 import { Person } from '../../Models/PersonModel';
-
-const POLISH_PHONE_NUMBER_LENGTH = 9;
+import TableRow from '../TableRow/TableRowComponent';
+import { usePersonTools } from '../../Hooks/usePersonTools';
 
 const Table: FC = () => {
     const { getPeople, saveChanges } = useRestAPI();
+    const { isPhoneNumberImproper, isPostalCodeImproper } = usePersonTools();
     const [people, setPeople] = useState<Person[]>([]);
-    const [wrongNumbers, setWrongNumbers] = useState<number[]>([]);
-    const [showNumbersSection, setShowNumbersSection] = useState<boolean>(false);
-    const [wrongPostalCodes, setWrongPostalCodes] = useState<number[]>([]);
-    const [showCodesSection, setShowCodesSection] = useState<boolean>(false);
-    const [emptyFieldsRows, setEmptyFieldsRows] = useState<number[]>([]);
-    const [showEmptyFieldsSection, setShowEmptyFieldsSection] = useState<boolean>(false);
+    const [areAllPhoneNumbersProper, setAreAllPhoneNumbersProper] = useState<boolean>(false);
+    const [areAllCodesProper, setAreAllCodesProper] = useState<boolean>(false);
+    const [areAllRequiredFieldsFilled, setAreAllRequiredFieldsFilled] = useState<boolean>(false);
 
     useEffect(() => {
         ReloadData()
     }, [])
-
-    const headers: { key: string, label: string }[] = [
-        { key: "id", label: "ID" },
-        { key: "firstName", label: "First Name" },
-        { key: "lastName", label: "Last Name" },
-        { key: "streetName", label: "Street Name" },
-        { key: "houseNumber", label: "House Number" },
-        { key: "apartmentNumber", label: "Apartment Number" },
-        { key: "postalCode", label: "Postal Code" },
-        { key: "town", label: "Town" },
-        { key: "phoneNumber", label: "Phone Number" },
-        { key: "dateOfBirth", label: "Birth Date" },
-        { key: "age", label: "Age" },
-        { key: "delete", label: "Add/Delete" }
-    ];
-
-    const GetAge = (birthDate: Dayjs): number => {
-        return dayjs().diff(birthDate, 'year');
-    }
 
     const AddEmptyRow = () => {
         let tempPeople = [...people];
@@ -67,50 +46,33 @@ const Table: FC = () => {
 
 
     const ArePhoneNumbersCorrect = () => {
-        let tempWrongNumbers: number[] = [];
+        let answer: boolean = true;
         people.map((person) => {
-            if (person.phoneNumber) {
-                if (person.phoneNumber.toString().length !== POLISH_PHONE_NUMBER_LENGTH) {
-                    tempWrongNumbers.push(person.Id);
-                }
+            if (isPhoneNumberImproper(person)) {
+                answer = false;
             }
             else if ((person.isModified && person.isTemp) || (!person.isTemp)) {
-                tempWrongNumbers.push(person.Id);
+                answer = false;
             }
         })
-        setWrongNumbers(tempWrongNumbers);
-        if (tempWrongNumbers.length > 0) {
-            setShowNumbersSection(true);
-        }
-        else {
-            setShowNumbersSection(false);
-        }
+        setAreAllCodesProper(answer);
     }
 
     const ArePostalCodesCorrect = () => {
-        let tempWrongCodes: number[] = [];
+        let answer: boolean = true;
         people.map((person) => {
-            if (person.postalCode) {
-                let regexp = new RegExp('^[0-9]{2}-[0-9]{3}$');
-                if (!regexp.test(person.postalCode)) {
-                    tempWrongCodes.push(person.Id);
-                }
+            if (isPostalCodeImproper(person)) {
+                answer = false;
             }
             else if ((person.isModified && person.isTemp) || (!person.isTemp)) {
-                tempWrongCodes.push(person.Id);
+                answer = false;
             }
         })
-        setWrongPostalCodes(tempWrongCodes);
-        if (tempWrongCodes.length > 0) {
-            setShowCodesSection(true);
-        }
-        else {
-            setShowCodesSection(false);
-        }
+        setAreAllCodesProper(answer);
     }
 
     const AreThereEmptyFields = () => {
-        let tempEmptyIds: number[] = [];
+        let answer : boolean = false;
         people.map((person) => {
             if ((person.firstName
                 && person.lastName
@@ -122,39 +84,10 @@ const Table: FC = () => {
                 && person.dateOfBirth
                 && (person.isTemp || !(person.isTemp && person.isModified)))
             === undefined) {
-                tempEmptyIds.push(person.Id);
+                answer = true;
             }
         })
-        setEmptyFieldsRows(tempEmptyIds);
-        if (tempEmptyIds.length > 0) {
-            setShowEmptyFieldsSection(true);
-        }
-        else {
-            setShowEmptyFieldsSection(false);
-        }
-    }
-
-
-
-    const ModifyPeople = <K extends keyof Person>(id: number, field: K, newValue: Person[K]) => {
-        let tempPeople = [...people];
-        let target = tempPeople.filter(x => x.Id === id)[0];
-        target[field] = newValue;
-        target.isModified = true;
-        setPeople(tempPeople);
-        console.log(people);
-
-        AreThereEmptyFields();
-
-        //checking for phoneNumber correctness
-        if (field === "phoneNumber") {
-            ArePhoneNumbersCorrect();
-        }
-
-        //checking for postalCode correctness
-        if (field === "postalCode") {
-            ArePostalCodesCorrect();
-        }
+        setAreAllRequiredFieldsFilled(answer);
     }
 
     const correctID = (element: Person, people: Person[]): Person => {
@@ -205,17 +138,21 @@ const Table: FC = () => {
     }
 
     const ReloadData = () => {
-        setShowCodesSection(false);
-        setShowEmptyFieldsSection(false);
-        setShowNumbersSection(false);
+        setAreAllCodesProper(false);
+        setAreAllRequiredFieldsFilled(false);
+        setAreAllPhoneNumbersProper(false);
         setPeople([]);
         getPeople().then(resp => {
             setPeople(resp as Person[]);
+
+            AreThereEmptyFields();
+            ArePhoneNumbersCorrect();
+            ArePostalCodesCorrect();
         });
     }
 
     const Save = () => {
-        if (!showCodesSection && !showEmptyFieldsSection && !showNumbersSection) {
+        if (!areAllCodesProper && !areAllRequiredFieldsFilled && !areAllPhoneNumbersProper) {
             saveChanges(people).then(() => {
                 let tempPeople: Person[] = [];
                 people.map(person => {
@@ -226,6 +163,10 @@ const Table: FC = () => {
                     tempPeople.push(person);
                 })
                 setPeople(tempPeople);
+
+                AreThereEmptyFields();
+                ArePhoneNumbersCorrect();
+                ArePostalCodesCorrect();
             });
         }
         else {
@@ -234,83 +175,65 @@ const Table: FC = () => {
         
     }
 
+    const setPerson = (person: Person) => {
+        const targetIndex = people.indexOf(person);
+        let tempPeople = [...people];
+        tempPeople.splice(targetIndex, 1);
+        tempPeople.push(person);
+        tempPeople.sort((a, b) => a.Id - b.Id);
+        setPeople(tempPeople);
+        //console.log(people);
+
+        AreThereEmptyFields();
+        ArePhoneNumbersCorrect();
+        ArePostalCodesCorrect();
+    }
+
     return (
         <div className={styles.TableComponent}>
-            {showNumbersSection && (
-                <div>
-                    {"The elements with id " + wrongNumbers.toString() + " have phone numbers of incorrect length"}
+            <div className={styles.HeaderSpace}>
+                <div className={styles.HeaderCell}>
+                    First Name
                 </div>
-            )}
-            {showCodesSection && (
-                <div>
-                    {"The elements with id " + wrongPostalCodes.toString() + " have inproper Postal Code."}
+                <div className={styles.HeaderCell}>
+                    Last Name
                 </div>
-            )}
-            {showEmptyFieldsSection && (
-                <div>
-                    {"The elements with id " + emptyFieldsRows.toString() + " have empty fields that are required."}
+                <div className={styles.HeaderCell}>
+                    Street Name
                 </div>
+                <div className={styles.HeaderCell}>
+                    House Number
+                </div>
+                <div className={styles.HeaderCell}>
+                    Apartment Number
+                </div>
+                <div className={styles.HeaderCell}>
+                    Postal Code
+                </div>
+                <div className={styles.HeaderCell}>
+                    Town
+                </div>
+                <div className={styles.HeaderCell}>
+                    Phone Number
+                </div>
+                <div className={styles.CalendarHeaderCell}>
+                    Date Of Birth
+                </div>
+                <div className={styles.AgeHeaderCell}>
+                    Age
+                </div>
+                <div className={styles.DeleteHeaderCell}>
+                    Delete
+                </div>
+            </div>
+            {people.map((element) => {
+                if (!element.isDeleted) {
+                    return (
+                        <TableRow key={element.Id} person={element} setPerson={setPerson} />
+                    )
+                }
+            }
             )}
-            <table className={styles.table}>
-                <thead>
-                    <tr className={styles.tableHeader}>
-                        {headers.map((row) => {
-                            return <td key={row.key} className={styles.tableHeaderCell} >
-                                <div className={styles.tableCell}>
-                                    {row.label}
-                                </div>
-                            </td>;
-                        })}
-                    </tr>
-                </thead>
-                <tbody>
-                    {people.map((element, index) => {
-                        if (!element.isDeleted) {
-                            return (
-                                <tr key={element.Id} className={styles.tableRow}>
-                                    <td>{element.Id}</td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.firstName ? element.firstName : ""} onChange={e => ModifyPeople<"firstName">(element.Id, "firstName", e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.lastName ? element.lastName : ""} onChange={e => ModifyPeople<"lastName">(element.Id, "lastName", e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.streetName ? element.streetName : ""} onChange={e => ModifyPeople<"streetName">(element.Id, "streetName", e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.houseNumber !== undefined ? element.houseNumber.toString() : ""} onChange={e => ModifyPeople<"houseNumber">(element.Id, "houseNumber", Number(e.target.value))} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.apartmentNumber !== undefined ? element.apartmentNumber.toString() : ""} onChange={e => ModifyPeople<"apartmentNumber">(element.Id, "apartmentNumber", Number(e.target.value))} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.postalCode ? element.postalCode : ""} onChange={e => ModifyPeople<"postalCode">(element.Id, "postalCode", e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.town ? element.town : ""} onChange={e => ModifyPeople<"town">(element.Id, "town", e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input type="text" style={{ height: "45px" }} defaultValue={element.phoneNumber !== undefined ? element.phoneNumber : ""} onChange={e => ModifyPeople<"phoneNumber">(element.Id, "phoneNumber", Number(e.target.value))} />
-                                    </td>
-                                    <td>
-                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                            <DatePicker
-                                                value={element.dateOfBirth}
-                                                onChange={(newValue) => ModifyPeople<"dateOfBirth">(element.Id, "dateOfBirth", newValue ? newValue : dayjs())}
-                                            />
-                                        </LocalizationProvider>
-                                    </td>
-                                    <td>{element.dateOfBirth ? GetAge(element.dateOfBirth) : ""}</td>
-                                    <td>
-                                        <button onClick={() => ModifyPeople<"isDeleted">(element.Id, "isDeleted", true)} > Delete </button>
-                                    </td>
-                                </tr>
-                            );
-                        }
-                    })}
-                </tbody>
-            </table>
             <div>
                 <button onClick={() => Refresh()} > Refresh </button>
                 <button onClick={() => AddEmptyRow()} > Add </button>
