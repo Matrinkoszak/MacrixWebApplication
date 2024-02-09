@@ -8,15 +8,15 @@ import { useRestAPI } from '../../Hooks/useRestAPI';
 import styles from '../Table/Table.module.scss'
 import { Person } from '../../Models/PersonModel';
 import TableRow from '../TableRow/TableRowComponent';
-
-const POLISH_PHONE_NUMBER_LENGTH = 9;
+import { usePersonTools } from '../../Hooks/usePersonTools';
 
 const Table: FC = () => {
     const { getPeople, saveChanges } = useRestAPI();
+    const { isPhoneNumberImproper, isPostalCodeImproper } = usePersonTools();
     const [people, setPeople] = useState<Person[]>([]);
-    const [areAllPhoneNumbersProper, setShowNumbersSection] = useState<boolean>(false);
-    const [areAllCodesProper, setShowCodesSection] = useState<boolean>(false);
-    const [areAllRequiredFieldsFilled, setShowEmptyFieldsSection] = useState<boolean>(false);
+    const [areAllPhoneNumbersProper, setAreAllPhoneNumbersProper] = useState<boolean>(false);
+    const [areAllCodesProper, setAreAllCodesProper] = useState<boolean>(false);
+    const [areAllRequiredFieldsFilled, setAreAllRequiredFieldsFilled] = useState<boolean>(false);
 
     useEffect(() => {
         ReloadData()
@@ -46,48 +46,33 @@ const Table: FC = () => {
 
 
     const ArePhoneNumbersCorrect = () => {
-        let tempWrongNumbers: number[] = [];
+        let answer: boolean = true;
         people.map((person) => {
-            if (person.phoneNumber) {
-                if (person.phoneNumber.toString().length !== POLISH_PHONE_NUMBER_LENGTH) {
-                    tempWrongNumbers.push(person.Id);
-                }
+            if (isPhoneNumberImproper(person)) {
+                answer = false;
             }
             else if ((person.isModified && person.isTemp) || (!person.isTemp)) {
-                tempWrongNumbers.push(person.Id);
+                answer = false;
             }
         })
-        if (tempWrongNumbers.length > 0) {
-            setShowNumbersSection(true);
-        }
-        else {
-            setShowNumbersSection(false);
-        }
+        setAreAllCodesProper(answer);
     }
 
     const ArePostalCodesCorrect = () => {
-        let tempWrongCodes: number[] = [];
+        let answer: boolean = true;
         people.map((person) => {
-            if (person.postalCode) {
-                let regexp = new RegExp('^[0-9]{2}-[0-9]{3}$');
-                if (!regexp.test(person.postalCode)) {
-                    tempWrongCodes.push(person.Id);
-                }
+            if (isPostalCodeImproper(person)) {
+                answer = false;
             }
             else if ((person.isModified && person.isTemp) || (!person.isTemp)) {
-                tempWrongCodes.push(person.Id);
+                answer = false;
             }
         })
-        if (tempWrongCodes.length > 0) {
-            setShowCodesSection(true);
-        }
-        else {
-            setShowCodesSection(false);
-        }
+        setAreAllCodesProper(answer);
     }
 
     const AreThereEmptyFields = () => {
-        let tempEmptyIds: number[] = [];
+        let answer : boolean = false;
         people.map((person) => {
             if ((person.firstName
                 && person.lastName
@@ -99,15 +84,10 @@ const Table: FC = () => {
                 && person.dateOfBirth
                 && (person.isTemp || !(person.isTemp && person.isModified)))
             === undefined) {
-                tempEmptyIds.push(person.Id);
+                answer = true;
             }
         })
-        if (tempEmptyIds.length > 0) {
-            setShowEmptyFieldsSection(true);
-        }
-        else {
-            setShowEmptyFieldsSection(false);
-        }
+        setAreAllRequiredFieldsFilled(answer);
     }
 
     const correctID = (element: Person, people: Person[]): Person => {
@@ -158,12 +138,16 @@ const Table: FC = () => {
     }
 
     const ReloadData = () => {
-        setShowCodesSection(false);
-        setShowEmptyFieldsSection(false);
-        setShowNumbersSection(false);
+        setAreAllCodesProper(false);
+        setAreAllRequiredFieldsFilled(false);
+        setAreAllPhoneNumbersProper(false);
         setPeople([]);
         getPeople().then(resp => {
             setPeople(resp as Person[]);
+
+            AreThereEmptyFields();
+            ArePhoneNumbersCorrect();
+            ArePostalCodesCorrect();
         });
     }
 
@@ -179,6 +163,10 @@ const Table: FC = () => {
                     tempPeople.push(person);
                 })
                 setPeople(tempPeople);
+
+                AreThereEmptyFields();
+                ArePhoneNumbersCorrect();
+                ArePostalCodesCorrect();
             });
         }
         else {
@@ -194,7 +182,11 @@ const Table: FC = () => {
         tempPeople.push(person);
         tempPeople.sort((a, b) => a.Id - b.Id);
         setPeople(tempPeople);
-        console.log(people);
+        //console.log(people);
+
+        AreThereEmptyFields();
+        ArePhoneNumbersCorrect();
+        ArePostalCodesCorrect();
     }
 
     return (

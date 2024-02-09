@@ -8,10 +8,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import styles from '../TableRow/TableRow.module.scss'
 import { Person } from '../../Models/PersonModel';
 import { ITableRowProps } from './ITableRowProps';
+import { usePersonTools } from '../../Hooks/usePersonTools';
 
 const POLISH_PHONE_NUMBER_LENGTH = 9;
 
 const TableRow: FC<ITableRowProps> = (props) => {
+    const { getAge, isPhoneNumberImproper, isPostalCodeImproper, isRequiredFieldEmpty } = usePersonTools();
     const [areThereEmptyFields, setAreThereEmptyFields] = useState<boolean>(false);
     const [isPhoneNumberIncorrect, setIsPhoneNumberIncorrect] = useState<boolean>(false);
     const [isPostalCodeIncorrect, setIsPostalCodeIncorrect] = useState<boolean>(false);
@@ -22,34 +24,23 @@ const TableRow: FC<ITableRowProps> = (props) => {
         CheckForProperPhoneNumber();
     }, [JSON.stringify(props.person)])
 
-    //TO DO: move to a service
-    const getAge = (birthDate: Dayjs): number => {
-        return dayjs().diff(birthDate, 'year');
-    }
-
-    const isRequiredFieldEmpty = <K extends keyof Person>(field: K) => {
-        if (props.person.isModified && props.person[field] === undefined) {
-            return true;
-        }
-        return false
-    }
 
     ///the 3 below functions have set statements for the state in if statements to prevent infinite rerender loops
     const getDefaultRequiredCellStyle = <K extends keyof Person>(field: K) => {
-        if (isRequiredFieldEmpty(field)) {
+        if (isRequiredFieldEmpty(props.person, field)) {
             return styles.incorrectCell;
         }
         return styles.outerCell;
     }
 
     const checkForEmptyFields = () => {
-        if (isRequiredFieldEmpty("firstName")
-            || isRequiredFieldEmpty("lastName")
-            || isRequiredFieldEmpty("streetName")
-            || isRequiredFieldEmpty("houseNumber")
-            || isRequiredFieldEmpty("postalCode")
-            || isRequiredFieldEmpty("town")
-            || isRequiredFieldEmpty("phoneNumber")
+        if (isRequiredFieldEmpty(props.person, "firstName")
+            || isRequiredFieldEmpty(props.person, "lastName")
+            || isRequiredFieldEmpty(props.person, "streetName")
+            || isRequiredFieldEmpty(props.person, "houseNumber")
+            || isRequiredFieldEmpty(props.person, "postalCode")
+            || isRequiredFieldEmpty(props.person, "town")
+            || isRequiredFieldEmpty(props.person, "phoneNumber")
         ) {
             setAreThereEmptyFields(true);
         }
@@ -58,23 +49,15 @@ const TableRow: FC<ITableRowProps> = (props) => {
         }
     }
 
-    const isPostalCodeImproper = () => {
-        let regexp = new RegExp('^[0-9]{2}-[0-9]{3}$');
-        if (props.person.isModified && (!props.person.postalCode || !regexp.test(props.person.postalCode))) {
-            return true;
-        }
-        return false
-    }
-
     const getPostalCodeCellStyle = () => {
-        if (isPostalCodeImproper()) {
+        if (isPostalCodeImproper(props.person)) {
             return styles.incorrectCell;
         }
         return styles.outerCell;
     }
 
     const CheckForProperPostalCode = () => {
-        if (isPostalCodeImproper()) {
+        if (isPostalCodeImproper(props.person)) {
             setIsPostalCodeIncorrect(true);
         }
         else {
@@ -82,22 +65,15 @@ const TableRow: FC<ITableRowProps> = (props) => {
         }
     }
 
-    const isPhoneNumberImproper = () => {
-        if (props.person.isModified && (!props.person.phoneNumber || props.person.phoneNumber.toString().length !== POLISH_PHONE_NUMBER_LENGTH)) {
-            return true;
-        }
-        return false
-    }
-
     const getPhoneNumberCellStyle = () => {
-        if (isPhoneNumberImproper()) {
+        if (isPhoneNumberImproper(props.person)) {
             return styles.incorrectCell;
         }
         return styles.outerCell;
     }
 
     const CheckForProperPhoneNumber = () => {
-        if (isPhoneNumberImproper()) {
+        if (isPhoneNumberImproper(props.person)) {
             setIsPhoneNumberIncorrect(true);
         }
         else {
@@ -110,7 +86,7 @@ const TableRow: FC<ITableRowProps> = (props) => {
         tempPerson[field] = newValue;
         tempPerson.isModified = true;
         props.setPerson(tempPerson);
-        console.log(props.person);
+        //console.log(props.person);
     }
 
     return (
