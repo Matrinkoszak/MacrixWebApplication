@@ -13,7 +13,7 @@ export class RestApiService {
         }).then((response) => {
             var result: Person[] = [];
             response.data.map((element: PersonNetworkModel) => {
-                console.log(element);
+                //console.log(element);
                 const person: Person = {
                     Id: element.id,
                     firstName: element.firstName,
@@ -30,13 +30,21 @@ export class RestApiService {
                     isDeleted: false
                 };
                 result.push(person);
-            })
-            console.log(result);
+            }).catch((error: { response: { data: any; status: any; headers: any; }; request: any; message: any; }) => {
+                if (error.response) {
+                    alert("Error! Couldn't download data. Error code: " + error.response.status + " with message: " + error.message);
+                } else if (error.request) {
+                    alert("Error! Couldn't connect to server!")
+                } else {
+                    alert("Error! " + error.message);
+                }
+            });
+            //console.log(result);
             return result;
         })
     }
 
-    public updatePerson = async (person: Person): Promise<number> => {
+    public updatePerson = async (person: Person): Promise<void> => {
         const url = "https://localhost:7212/api/People/" + person.Id;
         const personModel: PersonNetworkModel = {
             id: person.Id,
@@ -50,20 +58,32 @@ export class RestApiService {
             phoneNumber: person.phoneNumber,
             dateOfBirth: person.dateOfBirth?.toISOString()
         }
-        return await axios.put(url, personModel).then((response) => {
-            return response.status;
-        })
+        await axios.put(url, personModel).catch((error: { response: { data: any; status: any; headers: any; }; request: any; message: any; }) => {
+            if (error.response) {
+                alert("Error! Couldn't download data. Error code: " + error.response.status + " with message: " + error.message);
+            } else if (error.request) {
+                alert("Error! Couldn't connect to server!")
+            } else {
+                alert("Error! " + error.message);
+            }
+        });
 
     }
 
-    public deletePerson = async (person: Person): Promise<number> => {
+    public deletePerson = async (person: Person): Promise<void> => {
         const url = "https://localhost:7212/api/People/" + person.Id;
-        return await axios.delete(url).then((response) => {
-            return response.status;
-        })
+        await axios.delete(url).catch((error: { response: { data: any; status: any; headers: any; }; request: any; message: any; }) => {
+            if (error.response) {
+                alert("Error! Couldn't download data. Error code: " + error.response.status + " with message: " + error.message);
+            } else if (error.request) {
+                alert("Error! Couldn't connect to server!")
+            } else {
+                alert("Error! " + error.message);
+            }
+        });
     }
 
-    public addPeople = async (people: Person[]): Promise<number> => {
+    public addPeople = async (people: Person[]): Promise<void> => {
         const url = "https://localhost:7212/api/People/";
         let peopleModel: PersonNetworkModel[] = [];
         people.map(person => {
@@ -82,9 +102,15 @@ export class RestApiService {
             peopleModel.push(personModel);
 
         })
-        return await axios.post(url, peopleModel).then((response) => {
-            return response.status;
-        })
+        await axios.post(url, peopleModel).catch((error: { response: { data: any; status: any; headers: any; }; request: any; message: any; }) => {
+            if (error.response) {
+                alert("Error! Couldn't download data. Error code: " + error.response.status + " with message: " + error.message);
+            } else if (error.request) {
+                alert("Error! Couldn't connect to server!")
+            } else {
+                alert("Error! " + error.message);
+            }
+        });
 
     }
 }

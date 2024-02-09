@@ -11,16 +11,16 @@ export const useRestAPI = () => {
         return response;
     }
 
-    const deletePerson = async (person: Person): Promise<number> => {
-        return await restAPIService.deletePerson(person);
+    const deletePerson = async (person: Person): Promise<void> => {
+        await restAPIService.deletePerson(person);
     }
 
-    const updatePerson = async (person: Person): Promise<number> => {
-        return await restAPIService.updatePerson(person);
+    const updatePerson = async (person: Person): Promise<void> => {
+        await restAPIService.updatePerson(person);
     }
 
-    const addPeople = async (people: Person[]): Promise<number> => {
-        return await restAPIService.addPeople(people);
+    const addPeople = async (people: Person[]): Promise<void> => {
+        await restAPIService.addPeople(people);
     }
 
     const saveChanges = async (people: Person[]) => {
@@ -40,29 +40,14 @@ export const useRestAPI = () => {
         })
 
         peopleToRemove.map(person => {
-            try {
-                deletePerson(person);
-            }
-            catch {
-                alert("Removing person with id " + person.Id + " failed.");
-            }
+            deletePerson(person);
         })
 
         peopleToUpdate.map(person => {
-            try {
-                updatePerson(person);
-            }
-            catch {
-                alert("Updating person with id " + person.Id + " failed.");
-            }
+            updatePerson(person);
         })
 
-        try {
-            addPeople(peopleToAdd);
-        }
-        catch {
-            alert("Uploading new people failed.");
-        }
+        addPeople(peopleToAdd);
 
     }
 
