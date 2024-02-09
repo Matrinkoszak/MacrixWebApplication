@@ -9,24 +9,14 @@ describe("PersonToolsService functions", () => {
         const threeYearsPrior: Dayjs = dayjs().subtract(3, 'year');
         expect(service.GetAge(threeYearsPrior)).toEqual(3);
     });
-    it("should correctly check for filled field by field name alone in provided preexisting Person entity that was modified", () => {
+    it("should correctly check for filled field by field name alone in provided Person entity that was modified", () => {
         const service = new PersonToolsService();
         const person: Person = { Id: 0, firstName: "name", isDeleted: false, isModified: true, isTemp: false }
         expect(service.IsRequiredFieldEmpty(person, "firstName")).toEqual(false);
     });
-    it("should correctly check for empty field by field name alone in provided preexisting Person entity that was modified", () => {
+    it("should correctly check for empty field by field name alone in provided Person entity that was modified", () => {
         const service = new PersonToolsService();
         const person: Person = { Id: 0, firstName: "name", isDeleted: false, isModified: true, isTemp: false }
-        expect(service.IsRequiredFieldEmpty(person, "lastName")).toEqual(true);
-    });
-    it("should correctly check for filled field by field name alone in provided new Person entity that was modified", () => {
-        const service = new PersonToolsService();
-        const person: Person = { Id: 0, firstName: "name", isDeleted: false, isModified: true, isTemp: true }
-        expect(service.IsRequiredFieldEmpty(person, "firstName")).toEqual(false);
-    });
-    it("should correctly check for empty field by field name alone in provided new Person entity that was modified", () => {
-        const service = new PersonToolsService();
-        const person: Person = { Id: 0, firstName: "name", isDeleted: false, isModified: true, isTemp: true }
         expect(service.IsRequiredFieldEmpty(person, "lastName")).toEqual(true);
     });
     it("should correctly check proper Postal Code form of provided Person entity", () => {
@@ -58,5 +48,20 @@ describe("PersonToolsService functions", () => {
         const service = new PersonToolsService();
         const person: Person = { Id: 0, isDeleted: false, isModified: true, isTemp: true }
         expect(service.IsPhoneNumberImproper(person)).toEqual(true);
+    });
+    it("should correctly check modified status form of provided Person entity while checking phone number", () => {
+        const service = new PersonToolsService();
+        const person: Person = { Id: 0, isDeleted: false, isModified: false, isTemp: true }
+        expect(service.IsPhoneNumberImproper(person)).toEqual(false);
+    });
+    it("should correctly check modified status form of provided Person entity while checking post code", () => {
+        const service = new PersonToolsService();
+        const person: Person = { Id: 0, isDeleted: false, isModified: false, isTemp: true }
+        expect(service.IsPostalCodeImproper(person)).toEqual(false);
+    });
+    it("should correctly check modified status form of provided Person entity while checking empty field", () => {
+        const service = new PersonToolsService();
+        const person: Person = { Id: 0, isDeleted: false, isModified: false, isTemp: true }
+        expect(service.IsRequiredFieldEmpty(person, "firstName")).toEqual(false);
     });
 });
