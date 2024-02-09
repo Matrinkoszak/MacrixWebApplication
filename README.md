@@ -1,0 +1,1 @@
+Ideally I'd add more testing and gain some graphical talent so the app looks better, but current state I deem acceptable.
