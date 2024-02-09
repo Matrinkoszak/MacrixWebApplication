@@ -2,7 +2,6 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { Person } from '../Models/PersonModel';
 import { PersonNetworkModel } from '../Models/PersonResponseModel';
-import { useRestAPI } from '../Hooks/useRestAPI';
 
 export class RestApiService {
 

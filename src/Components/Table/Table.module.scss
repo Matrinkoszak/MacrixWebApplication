@@ -4,32 +4,41 @@
     align-items: center;
     justify-content: center;
 
-    .table {
-        border-collapse: collapse;
-        text-align: center;
-        height: 1px;
+    .HeaderSpace {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        border-top: 3px solid black;
+        border-bottom: 3px solid black;
 
-        .tableHeader {
-            border: 1px solid black;
-            font: 20px bold;
-
-            .tableHeaderCell {
-                border: 1px solid black;
-
-                .tableCell {
-                    margin: 4px;
-                }
-            }
+        .HeaderCell {
+            width: 176px;
+            margin-left: 1px;
+            margin-right: 1px;
+            border-left: 3px solid black;
         }
 
-        .tableRow {
-            border-bottom: 1px solid gray;
-            height: 100%;
+        .AgeHeaderCell {
+            margin-left: 1px;
+            margin-right: 1px;
+            width: 31px;
+            border-left: 3px solid black;
+        }
 
-            .tableCell {
-                margin: 2px;
-                height: 100%;
-            }
+        .CalendarHeaderCell {
+            margin-left: 1px;
+            margin-right: 1px;
+            width: 259px;
+            border-left: 3px solid black;
+        }
+
+        .DeleteHeaderCell {
+            margin-left: 1px;
+            margin-right: 1px;
+            width: 57px;
+            border-left: 3px solid black;
+            border-right: 3px solid black;
         }
     }
 }
